@@ -1,0 +1,172 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  position: relative;
+  z-index: 0;
+}
+
+body {
+  margin: 0;
+  font-size: 1em;
+  font-family: 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body, button {
+  color: #31363c;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+  font-size: 87.5%;
+  word-break: break-word;
+}
+
+p {
+  font-size: 0.95em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  margin: 0; /* bootstrap reset */
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+h2 {
+  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+h3 {
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+b,
+strong {
+  font-weight: 600;
+}
+
+ul,
+ol {
+  font-size: 0.95em;
+  padding-left: 1.8em;
+}
+
+ul p,
+ol p {
+  font-size: 1em;
+  margin-bottom: 0.25rem !important;
+}
+
+ul li,
+ol li {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+li > ul,
+li > ol {
+  margin-top: 10px;
+  padding-left: 1.25em;
+}
+
+ol {
+  list-style: none;
+  counter-reset: count 0;
+}
+
+ul > li::marker {
+  color: hsla(210, 25%, 40%, 1);
+}
+
+ol > li {
+  counter-increment: count;
+}
+
+ol > li::before {
+  content: counter(count);
+  background: hsla(210, 25%, 70%, 1);
+  color: #fff;
+  font-size: 0.7em;
+  font-weight: 700;
+  position: absolute;
+  top: 0.25em;
+
+  --size: 1.65em;
+  left: calc(-1 * var(--size) - 0.7em);
+  line-height: var(--size);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  text-align: center;
+}
+
+div > p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  transition: color 0.1s ease-in-out;
+}
+
+/* Bootstrap migration */
+
+.w-100 {
+  width: 100%;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-muted {
+  color: #6c757d;
+}
+
+.text-dark {
+  color: #343a40;
+}
+
+.text-success {
+  color: #28a745;
+}
+
+.text-center {
+  text-align: center;
+}
+
+small,
+.small {
+  font-size: 80%;
+  font-weight: 400;
+}
+
+ins,
+del {
+  text-decoration: none;
+}
+
+/* Accessibility */
+.visually-hidden {
+  position: absolute;
+  top: -99999rem;
+  left: -99999rem;
+}

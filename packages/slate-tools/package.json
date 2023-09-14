@@ -1,0 +1,20 @@
+{
+  "name": "@kenchi/slate-tools",
+  "version": "0.1.0",
+  "description": "Shared package for slate types and utilities",
+  "repository": "git://github.com/michaelschade/kenchi.git",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "prepare": "$npm_execpath build",
+    "clean": "rm -rf lib",
+    "start": "tsc --watch --preserveWatchOutput",
+    "build": "tsc",
+    "lint": "eslint 'src/**/*.{js,ts,tsx}'"
+  },
+  "dependencies": {
+    "@braintree/sanitize-url": "6.0.0",
+    "@sentry/minimal": "6.19.7",
+    "slate": "0.81.0"
+  }
+}

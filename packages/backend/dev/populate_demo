@@ -1,0 +1,435 @@
+#!/usr/bin/env pipenv run python
+import os
+import sys
+import re
+import json
+from sqlalchemy import or_
+from kenchi import models, utils
+from kenchi.db import session, init_script
+from kenchi.models.workflow import WorkflowTypeEnum
+from kenchi.graphql_schema import auth
+
+
+def main(user_id=None, clean_demo=False):
+    init_script()
+
+    if not utils.is_development:
+        print("Error: this script is only for development, but you seem to be in a different environment. Refusing to run; sorry!")
+        exit(-1)
+
+    user = None
+    if user_id:
+        user = session.query(models.User).get(user_id)
+        if not user:
+            print("Error: invalid user. Please make these by logging in first")
+            exit(-1)
+    else:
+        user = session.query(models.User).order_by(models.User.created_at.desc()).first()
+        if not user:
+            print("Error: no org or user. Please make these by logging in first")
+            exit(-1)
+
+    owning_organization_id = user.organization.id
+
+    if clean_demo:
+        print("Deleting existing workflows, collections, and tools for user ID: %s" % user.id)
+        workflows = session.query(models.Workflow)\
+            .filter(models.Workflow.owning_organization_id == owning_organization_id)
+        workflows.delete()
+        collections = session.query(models.Collection)\
+            .filter(models.Collection.organization_id == owning_organization_id)
+        collections.delete()
+        tools = session.query(models.Tool).filter(models.Tool.owning_organization_id == owning_organization_id)
+        tools.delete()
+        auth.setup_new_org(user.organization, user)
+
+    collection = session.query(models.Collection)\
+        .filter(models.Collection.is_default == True)\
+        .filter(models.Collection.organization_id == owning_organization_id)\
+        .one_or_none()
+
+    print("Populating demos for user ID: %s" % user.id)
+    workflow = models.Workflow(
+        collection=collection,
+        static_id="wrkf_0WMvZCRrwf",
+        name="Embed: Check account security",
+        description="Important step: we must check someone has access to an account before divulging any account information. Follow this process for all account-based workflows.",
+        contents=embed_check_security,
+        created_by_user=user,
+        is_latest=True,
+        type=WorkflowTypeEnum.embed,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(workflow)
+
+    workflow = models.Workflow(
+        collection=collection,
+        static_id="wrkf_0ZjYjKfUoh",
+        name="Embed: Find Account",
+        description="Find a user's account. We have a few tricks included to figure out who someone is if we don't have their exact email.",
+        contents=embed_find_account,
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(workflow)
+
+    workflow = models.Workflow(
+        collection=collection,
+        name="Account: Can't Login",
+        description="Diagnose why a user can't log in to their account. This often is an error with the user's login information, but could also be due to the state of their account.",
+        contents=cant_login_contents,
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(workflow)
+
+    workflow = models.Workflow(
+        collection=collection,
+        name="Account: Stop Shipment",
+        description="When a seller needs to stop a shipment that has already started processing.",
+        contents=stop_shipment_contents,
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(workflow)
+
+    workflow = models.Workflow(
+        collection=collection,
+        name="Misc: Unknown Charge",
+        description="Either a customer writing in about a charge from one of our sellers on their card statement (likeliest) or seller questioning a charge.",
+        contents=unknown_charge_contents,
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(workflow)
+
+    tool = models.Tool(
+        static_id="tool_0E1YHRk5hY",
+        name="Look up shipments",
+        description="",
+        component="OpenURLs",
+        inputs=[],
+        configuration={"urls": [
+            slate(False, ["#/demo/admin?email=jenny@example.com&shipments=true"])
+        ]},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_0oRCrShzVP",
+        name="Need account email",
+        description="",
+        component="GmailAction",
+        inputs=[],
+        configuration={"data": slate(True, [
+            "I'm happy to help with this! Before I can dive in more, I'm having trouble finding an account under this email. Could you confirm which account you're looking at? (If you can send an email from that account instead, that will help speed up our verification process too.)"
+        ])},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_08qWn0ZRPZ",
+        name="Schedule call",
+        description="",
+        component="GmailAction",
+        inputs=[],
+        configuration={"data": slate(True, [
+            "I'd love to hop on a call this week to help with this. Are you able to schedule a call in the next few days? Right now, I'm available at these times:",
+            "",
+            "*",
+            "*",
+            "*",
+            "",
+            "If those don't work, just let me know what does and we'll figure something out.",
+        ])},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_011gUsp44q",
+        name="Search account",
+        description="",
+        component="OpenURLs",
+        inputs=[],
+        configuration={"urls": [
+            slate(False, ["/demo/admin?email=jenny@example.com&shipments=true"])
+        ]},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_0ypq26IPXt",
+        name="Search orders",
+        description="",
+        component="OpenURLs",
+        inputs=[],
+        configuration={"urls": [
+            slate(False, ["/demo/admin?email=jenny@example.com&orders=true"])
+        ]},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_0kzDidX60X",
+        name="Shipment already sent",
+        description="",
+        component="GmailAction",
+        inputs=[],
+        configuration={"data": slate(True, [
+            "Unfortunately, the shipment was already sent, so we can't stop it at this point. I'm sorry that I can't do more here. If I can help provide any advice for working with the customer to return it, please let me know.",
+            "In the future, you can immediately stop a shipment from your Dashboard under the Shipments section. This is the fastest way to recall an order if you need to.",
+            "Sorry again that I can't do more to help with this specific order!"
+        ])},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_0m2DY6kQKL",
+        name="Shipment suspended",
+        description="",
+        component="GmailAction",
+        inputs=[],
+        configuration={"data": slate(True, [
+            "Good news: the shipment hasn't gone out yet, so we were able to suspend the shipment for you. In the future, you can also do this from your Dashboard under the Shipments tab (a shipment has to be stopped before it's loaded onto our trucks, so time is usually of the essence)."
+        ])},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_0Txgx7XfZy",
+        name="Verify email",
+        description="",
+        component="GmailAction",
+        inputs=[],
+        configuration={"data": slate(True, [
+            "For your security, I need to confirm you own this account before we continue. Could you send us an email from the account on file? You can also verify the account on file right from your Dashboard at https://dashboard.example.com/verify_support"
+        ])},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_0ZdVXvsSqh",
+        name="Search and open user overview",
+        description="",
+        component="CustomThingTemplate",
+        inputs=[],
+        configuration={"tool": "AccountOverview"},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    tool = models.Tool(
+        static_id="tool_0SW39psqko",
+        name="Recent Logins",
+        description="",
+        component="CustomThingTemplate",
+        inputs=[],
+        configuration={"tool": "RecentLogins"},
+        created_by_user=user,
+        is_latest=True,
+        owning_organization_id=owning_organization_id
+    )
+    session.add(tool)
+
+    session.commit()
+
+
+def slate(rich, texts):
+    if rich:
+        return {
+            "slate": True,
+            "singleLine": False,
+            "rich": True,
+            "children": list(map(lambda t: {"children": [{"text": t}]}, texts)),
+        }
+    else:
+        return {
+            "slate": True,
+            "singleLine": True,
+            "rich": False,
+            "children": list(map(lambda t: {"text": t}, texts)),
+        }
+
+
+cant_login_contents = [
+    {"type": "paragraph", "workflow": "wrkf_0WMvZCRrwf", "children": [{"text": ""}]},
+    {"type": "numbered-list", "children": [
+        {"type": "list-item", "children": [
+            {"type": "workflow-embed", "workflow": "wrkf_0ZjYjKfUoh", "children": [{"text": ""}]}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "workflow-embed", "workflow": "wrkf_0WMvZCRrwf", "children": [{"text": ""}]}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "paragraph", "children": [
+                {"text": "Look at the account's most recent logins to see if they have successfully logged in since sending this email. If they have since logged in, write back to confirm they are already fixed. "}
+            ]},
+            {"type": "tool", "tool": "tool_0SW39psqko", "children": [{"text": ""}]}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "paragraph", "children": [
+                {"text": "Check if 2-factor auth is enabled. If it is, we need to confirm if this is where the user is stuck, or if they just don't know their password."}
+            ]}
+        ]},
+        {"type": "bulleted-list", "children": [
+            {"type": "list-item", "children": [
+                {"text": "Check our "},
+                {"type": "link", "url": "#", "children": [
+                    {"text": "2-factor troubleshooting tips"}
+                ]},
+                {"text": " before trying to reset the account. They may have a recovery code they can use.", "bold": True}
+            ]},
+            {"type": "list-item", "children": [
+                {"text": "If we have to reset their 2-factor auth, we will need to schedule a call for identity verification. "}
+            ]}
+        ]},
+        {"type": "list-item", "children": [
+            {"text": "See if the user has already requested a password reset. Right now the best way to do that is by "},
+            {"type": "link", "url": "#", "children": [
+                {"text": "searching our server logs in Splunk"}
+            ]},
+            {"text": "."}
+        ]},
+        {"type": "bulleted-list", "children": [
+            {"type": "list-item", "children": [
+                {"text": "If the password reset was sent, was it valid when they tried? Sometimes users try much later and the reset link is no longer valid. In that case, ask them to request a new reset email."}
+            ]},
+            {"type": "list-item", "children": [
+                {"text": "If the link is still valid, send it to them. You will have to copy from the logs."}
+            ]}
+        ]}
+    ]}
+]
+
+stop_shipment_contents = [
+    {"type": "paragraph", "children": [{"text": ""}]},
+    {"type": "numbered-list", "children": [
+                              {"type": "list-item", "children": [
+                                  {"type": "workflow-embed", "workflow": "wrkf_0WMvZCRrwf", "children": [{"text": ""}]}
+                              ]},
+        {"type": "list-item", "children": [
+            {"type": "paragraph", "children": [
+                {"text": "Look up the shipment in admin. "}
+            ]},
+            {"type": "bulleted-list", "children": [
+                                      {"type": "list-item", "children": [
+                                          {"type": "paragraph", "children": [
+                                              {"text": "If they did not provide a shipment ID, take a look at their recent pending shipments to try to identify it with any details they included. Write back to confirm you have the right shipment before continuing."}
+                                          ]},
+                                          {"type": "tool", "tool": "tool_0E1YHRk5hY",
+                                           "children": [{"text": ""}]}
+                                      ]}
+            ]}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "paragraph", "children": [
+                {"text": "If the shipment has not been processed, simply suspend it from their dashboard and let them know."}
+            ]},
+            {"type": "tool", "tool": "tool_0m2DY6kQKL", "children": [{"text": ""}]}
+        ]},
+        {"type": "list-item", "children": [
+            {"text": "If the shipment is currently being processed, we may be able to intervene, but it is unlikely. Call the warehouse to see if there is time to stop it."}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "paragraph", "children": [
+                {"text": "If none of that worked, unfortunately the shipment could not be stopped."}
+            ]},
+            {"type": "tool", "tool": "tool_0kzDidX60X", "children": [{"text": ""}]}
+        ]}
+    ]}
+]
+
+unknown_charge_contents = [
+    {"type": "numbered-list", "children": [
+        {"type": "list-item", "children": [
+            {"text": "Determine if this is a charge on a customer's card or one of our user's accounts."}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "paragraph", "children": [
+                {"text": "If it is a customer's card, we need to introduce them to the shipper for more help. Search admin for the order:"}
+            ]},
+            {"type": "tool", "tool": "tool_0ypq26IPXt", "children": [{"text": ""}]}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "paragraph", "children": [
+
+                {"text": "Otherwise, this might be a question about billing on one of our user's accounts. Try finding their account:"}
+            ]}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "workflow-embed", "workflow": "wrkf_0ZjYjKfUoh", "children": [{"text": ""}]}
+        ]},
+        {"type": "list-item", "children": [
+            {"type": "workflow-embed", "workflow": "wrkf_0WMvZCRrwf", "children": [{"text": ""}]}
+        ]},
+        {"type": "list-item", "children": [
+            {"text": "Locate the charge in their account and send a link to their payment history dashboard with an explanation. If the charge seems in error, check with your team billing specialist to confirm the best next steps."}
+        ]}
+    ]}
+]
+
+embed_check_security = [
+    {"type": "paragraph", "children": [
+        {"text": "Security check:", "bold": True},
+        {"text": " If you are working with an active account, confirm the person emailing is the same as the account owner (i.e. email addresses match) before continuing."}
+    ]},
+    {"type": "paragraph", "children": [
+        {"text": "If the emails "},
+        {"text": "do not match", "bold": True},
+        {"text": ", follow up with them to confirm in their Dashboard:"}
+    ]},
+    {"type": "tool", "tool": "tool_0Txgx7XfZy", "children": [{"text": ""}]}
+]
+
+embed_find_account = [
+    {"type": "paragraph", "children": [
+        {"text": "Look up the account under their email to confirm it exists."}
+    ]},
+    {"type": "tool", "tool": "tool_0ZdVXvsSqh", "children": [{"text": ""}]},
+    {"type": "paragraph", "children": [{"text": ""}]},
+    {"type": "paragraph", "children": [
+        {"text": "If you "},
+        {"text": "can't find", "bold": True},
+        {"text": " the account, ask them for more info:"}
+    ]},
+    {"type": "tool", "tool": "tool_0oRCrShzVP", "children": [{"text": ""}]}
+]
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Populate development environment')
+    parser.add_argument(
+        '--clean', help='Populate a clean demo (i.e. remove all tools and workflows)', action='store_true')
+    parser.add_argument('--user', help='Specific user ID for which to populate demo', action='store', type=int)
+    args = parser.parse_args()
+    main(user_id=args.user, clean_demo=args.clean)

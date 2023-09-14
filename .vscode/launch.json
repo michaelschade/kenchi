@@ -1,0 +1,128 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Backend",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "start"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Admin",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "start:admin"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Worker",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "start:worker"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Frontend Tests",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "test"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug UI Tests",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/ui",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "test"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug UI Test (Current file)",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/ui",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "test", "${fileBasenameNoExtension}"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Frontend Test (Current file)",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "test", "${fileDirname}/${fileBasenameNoExtension}"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Playwright Test (Current file)",
+      "protocol": "inspector",
+      "cwd": "${workspaceFolder}/packages/frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "playwright:debug", "${fileBasenameNoExtension}"
+      ],
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Backend Test(current file}",
+      "request": "launch",
+      "runtimeArgs": [
+        "test", "${fileBasenameNoExtension}"
+      ],
+      "runtimeExecutable": "pnpm",
+      "cwd": "${workspaceFolder}/packages/backend",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "pwa-node"
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach",
+      "port": 9229
+    }
+  ]
+}

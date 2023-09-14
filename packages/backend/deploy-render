@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+export SENTRY_ORG=kenchi
+export SENTRY_PROJECT=backend
+export SENTRY_DEPLOY_ENVIRONMENT=$APP_ENV
+export SENTRY_RELEASE=$SENTRY_VERSION
+
+sentry-cli releases files $SENTRY_RELEASE upload-sourcemaps ./build/api/ --rewrite
+sentry-cli releases finalize $SENTRY_RELEASE
+sentry-cli releases deploys $SENTRY_RELEASE new -e $APP_ENV

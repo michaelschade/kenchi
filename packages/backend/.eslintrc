@@ -1,0 +1,31 @@
+{
+  "ignorePatterns": [
+    "build/*"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "tests/*.js"
+      ],
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off"
+      }
+    }
+  ],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@prisma/client",
+              "@prisma/client/*"
+            ],
+            "message": "Please use 'prisma-client' instead."
+          }
+        ]
+      }
+    ]
+  }
+}

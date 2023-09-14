@@ -1,0 +1,4 @@
+packages/admin/src/graphql/generated.ts linguist-generated=true
+packages/frontend/src/graphql/generated.ts linguist-generated=true
+packages/backend/tests/test_template.sql linguist-generated=true
+pnpm-lock.yaml linguist-generated=true

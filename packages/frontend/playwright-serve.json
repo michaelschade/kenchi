@@ -1,0 +1,10 @@
+{
+  "cleanUrls": false,
+  "public": "./build",
+  "rewrites": [
+    {
+      "source": "/**",
+      "destination": "/index.html"
+    }
+  ]
+}

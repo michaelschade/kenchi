@@ -1,0 +1,50 @@
+{
+  "extends": [
+    "config:base",
+    "group:recommended",
+    "group:definitelyTyped",
+    "schedule:nonOfficeHours"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "ignoreDeps": [
+    "@types/graphql-upload",
+    "@babel/*"
+  ],
+  "packageRules": [
+    {
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchPackagePatterns": [
+        "lint",
+        "prettier"
+      ],
+      "automerge": true
+    },
+    {
+      "matchPackagePatterns": ["@bull-board/*"],
+      "groupName": "@bull-board"
+    },
+    {
+      "matchPackagePatterns": ["slate", "slate-*"],
+      "groupName": "slate"
+    }
+  ],
+  "hostRules": [
+    {
+      "matchHost": "npm.pkg.github.com",
+      "hostType": "npm",
+      "encrypted": {
+        "token": "wcFMA/xDdHCJBTolAQ//X53mBwqQyYcevDGImS23PAfF6Ub9sp8a1rsHn6bvraIVXDVqYk8qD1vZ3ZUywqlyX0JkqicOz7bn+vgCkHnM5FhzbJQNcAsbSdTPZcR6d96asqsRcw21Kdtl5WEryaE5Nn4adhcCk6Q5KLadt6piOTBP6B046Kc/vNpQ19aQtbU5adGSgX4DT9f18ECMgfRUlhPL+xpyCRhjcsGn9X2RD18hVD1+JyVfrKEg/xw9TRkC1skkFXLnDXc4pDPlFpkZ7Y3qIgk1rqEN+2U9d3OtczN0/3j0wRgDi8JnX/B+JsCR6w+ozKZ9JuayuhFHfh0kKkzbYsXcr7zTttlTTz6yyoF+y+uTEevj3xKvtobj9pGvCwd/JxlB31Z8ydKdyfWXU2/LECyl2JQ51WHLcIdH5O3UWbi8KkD+/MCel4rgAvTUD6HoUByhae+FZhaNYfTMRMyAJkdhX9o4r1h2T1gIvOBGZidcGkF0gH12mfshouqjHHlvIJcMHc1zM4KnNiTReJBQHTq7FCUQMxSkaho0P5bnmoJl8d45YNJV0hMThRzXMx0YangtU0YnpZFIs0nIxz9Hdo/AvB71YG/W/zmTJp0BN4ub69F9qILFcLpyTpi0Cdxt0D/5MErMuoJUyNbc37OVYq6RFt3QhI7qNV/8608rciKx4kWNJ1Ds45M6Jl3SewFk211iJsr+ym8qJS7ZO5h2Ey0EOV5lJyzDcrfTjisPfK5aNiLtyDKPUOXzjtVKiZJU/MFZYYUPEKAp2qppxqEwP2Zt/xTB5qEEtzj+36hoZwO9jqLtE+Lsgj+k6gtSva2jiShwWraywyFW0h4yKKN4y056Or+GkFH8NQ"
+      }
+    },
+    {
+      "matchHost": "npm.fontawesome.com",
+      "hostType": "npm",
+      "token": "264E9B96-1535-4EEB-B97E-F7E324F74805"
+    }
+  ],
+  "enabled": false
+}

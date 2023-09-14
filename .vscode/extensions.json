@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "apollographql.vscode-apollo",
+    "github.copilot",
+    "davidanson.vscode-markdownlint",
+    "prisma.prisma"
+  ]
+}

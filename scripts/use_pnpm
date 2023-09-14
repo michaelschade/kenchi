@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+const message = `
+We now use pnpm instead of yarn. If you haven't installed it yet, please run:
+$ brew install pnpm
+
+To install dependencies:
+$ pnpm install
+
+Everything else should work as usual, just use \`pnpm\` instead of \`yarn\`.
+`;
+
+const execpath = process.env.npm_execpath;
+if (execpath && !execpath.endsWith('pnpm.cjs')) {
+  console.error(message);
+  process.exit(1);
+}

@@ -1,0 +1,191 @@
+#!/usr/bin/env node
+const { spawn } = require('child_process');
+const { writeFile } = require('fs/promises');
+const path = require('path');
+const chalk = require('chalk');
+const SentryCli = require('@sentry/cli');
+
+const extensionDir = path.join(__dirname, '../');
+process.chdir(extensionDir);
+
+async function runGetValue(command, args, cwd = extensionDir) {
+  const child = spawn(command, args, { cwd });
+
+  return new Promise((resolve, reject) => {
+    let stdout = '';
+    let stderr = '';
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(stderr));
+      }
+    });
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    child.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+  });
+}
+
+async function run(command, args, cwd = extensionDir) {
+  console.log(`${command} ${args.join(' ')}`);
+  const child = spawn(command, args, { cwd });
+
+  child.stdout.pipe(process.stdout);
+  child.stderr.pipe(process.stderr);
+  return new Promise((resolve, reject) => {
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error());
+      }
+    });
+  });
+}
+
+function error(msg) {
+  console.error(chalk.red(msg));
+  process.exit(1);
+}
+
+async function maybeUpdateManifestAndTag() {
+  let currentTag;
+  try {
+    currentTag = await runGetValue('git', [
+      'describe',
+      '--tags',
+      '--match=extension-v*',
+    ]);
+    currentTag = currentTag.trim();
+  } catch (e) {
+    return error(
+      'Could not find the last extension release tag. Giving up out of confusion.'
+    );
+  }
+  const [, lastTagVersionWithV, commitsBack] = currentTag.split('-');
+  const lastTagVersion = lastTagVersionWithV.substr(1);
+  const manifestPath = path.join(extensionDir, './manifest.json');
+  const manifest = require(manifestPath);
+  const manifestVersion = manifest.version;
+  if (commitsBack) {
+    if (lastTagVersion !== manifestVersion) {
+      const manifestVersionTag = `extension-v${manifestVersion}`;
+      return error(
+        `The manifest version (${manifestVersion}) does not match the last extension release tag (${currentTag}).\n` +
+          `If you're trying to manually change the version (rather than letting this script do it), please make sure the current commit is tagged ${manifestVersionTag}.` +
+          `If you accidentally committed on top of ${manifestVersionTag}, \`git checkout ${manifestVersionTag}\` so we release the correct code.`
+      );
+    }
+    const newVersionParts = manifestVersion
+      .split('.')
+      .map((v) => parseInt(v, 10));
+    newVersionParts[newVersionParts.length - 1]++;
+    const newVersion = newVersionParts.join('.');
+    console.log(
+      chalk.green(
+        `Updating manifest.json and tagging ${newVersion}, ${commitsBack} commits ahead of ${manifestVersion}.`
+      )
+    );
+    manifest.version = newVersion;
+    await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+    await run('git', [
+      'commit',
+      '-a',
+      '-m',
+      `Release extension version ${newVersion}`,
+    ]);
+    const newTag = `extension-v${newVersion}`;
+    await run('git', ['tag', newTag]);
+    await run('git', ['push']);
+    await run('git', ['push', 'origin', newTag]);
+  } else {
+    if (lastTagVersion !== manifestVersion) {
+      return error(
+        `The manifest version (${manifestVersion}) does not match the current tagged version (${lastTagVersion}). Giving up out of confusion.`
+      );
+    }
+  }
+}
+
+async function sentryExecPassthrough(cli, args) {
+  const result = await cli.execute(args, false);
+  console.log(result);
+  return result;
+}
+
+async function main() {
+  const gitStatus = await runGetValue('git', ['status', '--porcelain']);
+  if (gitStatus) {
+    return error(
+      'Your git trunk is not clean. Please commit or stash your changes.'
+    );
+  }
+
+  await maybeUpdateManifestAndTag();
+
+  // We should now be on a tag with the correct version that matches the manifest version.
+  console.log(chalk.green(`Telling Sentry about release`));
+  const cli = new SentryCli(null, {
+    silent: false,
+    authToken:
+      'c759db39e3a44c1ca225c2b40135f67c8ffcc5d597624be4b45863090b80437e',
+    org: 'kenchi',
+    project: 'extension',
+  });
+
+  let sentryVersion = await cli.execute(['releases', 'propose-version'], false);
+  sentryVersion = `extension@${sentryVersion.trim()}`;
+
+  await sentryExecPassthrough(cli, ['releases', 'new', sentryVersion]);
+  await sentryExecPassthrough(cli, [
+    'releases',
+    'set-commits',
+    '--auto',
+    sentryVersion,
+  ]);
+
+  console.log(chalk.green('Freshining up pnpm'));
+  await run('pnpm', ['clean-for-build']);
+  await run('pnpm', ['install']);
+
+  console.log(chalk.green('Building extension'));
+  await run('pnpm', ['build']);
+
+  const buildDir = path.join(extensionDir, 'build-production');
+  process.chdir(buildDir);
+
+  console.log(chalk.green('Sending sourcemaps to Sentry'));
+  await sentryExecPassthrough(cli, [
+    'releases',
+    'files',
+    sentryVersion,
+    'upload-sourcemaps',
+    './',
+    '--rewrite',
+  ]);
+
+  await run('zip', ['-FSr', '../extension.zip', './', '-x', '*.map'], buildDir);
+
+  process.chdir(extensionDir);
+
+  console.log(chalk.green(`Telling Sentry we're done building`));
+
+  await sentryExecPassthrough(cli, ['releases', 'finalize', sentryVersion]);
+
+  console.log(
+    chalk.bgGray.green(
+      `╔═══════════════════════════╗\n` +
+        `║ 🎉 Extension is built! 🎉 ║\n` +
+        `╚═══════════════════════════╝\n\n` +
+        `Install ./build-production as an unpacked extension and do some testing.\n` +
+        `When you're ready to submit, upload ./extension.zip to:\n` +
+        `https://chrome.google.com/webstore/devconsole/b07d676a-c87f-4ac4-b9a4-782810e10474/dbffglpoceamchbapbidcafmgneihpbh/edit/package`
+    )
+  );
+}
+
+main();

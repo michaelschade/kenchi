@@ -1,0 +1,55 @@
+{
+  "name": "Kenchi",
+  "description": "Kenchi is the best way to scale your support team.",
+  "version": "0.27",
+  "web_accessible_resources": [
+    "iframe.html",
+    "images/icon-40.png"
+  ],
+  "permissions": [
+    "<all_urls>",
+    "tabs",
+    "clipboardRead",
+    "clipboardWrite",
+    "contextMenus",
+    "webRequest",
+    "webNavigation"
+  ],
+  "background": {
+    "page": "background.html",
+    "persistent": true
+  },
+  "browser_action": {},
+  "icons": {
+    "16": "images/icon-16.png",
+    "32": "images/icon-32.png",
+    "40": "images/icon-40.png",
+    "48": "images/icon-48.png",
+    "128": "images/icon-128.png",
+    "200": "images/icon-200.png"
+  },
+  "content_security_policy": "script-src 'self'; object-src 'self'; frame-src {{APP_HOST}}",
+  "commands": {
+    "activate": {
+      "suggested_key": {
+        "default": "Ctrl+Space",
+        "mac": "MacCtrl+Space"
+      },
+      "description": "Show Kenchi"
+    },
+    "hide": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Space",
+        "mac": "MacCtrl+Shift+Space"
+      },
+      "description": "Hide Kenchi"
+    }
+  },
+  "externally_connectable": {
+    "matches": [
+      "{{APP_HOST}}/*"
+    ]
+  },
+  "manifest_version": 2,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkiVYqxQxR+0ZLuzoNizpxc0OPDbaqSoi5eayuRPeCpsHEhuUFybBHm8Lsu04+G7/9tcy4fJnfT6zpwUMjHqR7klVGK0ifTJIEqXcZ22H1lD315k5QWmw3+9WZCzoGsAubdzy3wPTZwY5/NNPoI/9y8PUfE16ph8SFiFVtosB35BI4M9KNoPfQQvSR2hLxGRb9Xt2vPDbmY42Ag1Satw/6u/lmmlPC6om0JVkYgYmgsUtkFfnXpsipENQHFR4yySlLAQdLqZfiXwwaNUbCR/5vDGzx2gV1QHW1h7eO3oyv3w+DPueWa6QjmvvgqDe/HdVWrKsVsaXPfet2Me7q5RY4QIDAQAB"
+}

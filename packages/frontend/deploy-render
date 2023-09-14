@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+export SENTRY_ORG=kenchi
+export SENTRY_PROJECT=frontend
+export SENTRY_DEPLOY_ENVIRONMENT=$REACT_APP_ENV
+export SENTRY_RELEASE=$REACT_APP_SENTRY_VERSION
+
+sentry-cli releases files $SENTRY_RELEASE upload-sourcemaps ./build --rewrite
+sentry-cli releases finalize $SENTRY_RELEASE
+sentry-cli releases deploys $SENTRY_RELEASE new -e $REACT_APP_ENV

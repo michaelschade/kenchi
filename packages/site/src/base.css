@@ -1,0 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+
+@font-face {
+  font-family: 'Neue Machina';
+  src: url(./fonts/PPNeueMachina-Light.woff2) format('woff2');
+  font-style: normal;
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Neue Machina';
+  src: url(./fonts/PPNeueMachina-Regular.woff2) format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --assetShadow: 0px 38px 76px rgba(0, 6, 54, 0.3);
+}
+
+/* mobile breakpoint */
+@media (max-width: 1200px) {
+  :root {
+    --assetShadow: 0px 38px 50px rgba(0, 6, 54, 0.2);
+  }
+}
+
+/* mobile breakpoint */
+@media (max-width: 800px) {
+  :root {
+    --assetShadow: 0px 38px 46px rgba(0, 6, 54, 0.1);
+  }
+}
+
+*::selection {
+  background: var(--colorPeriwinkleLight);
+  color: var(--colorBlack);
+}
+
+/* Base variables that don't compute from other vars */
+html {
+  /* Font bases */
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  /* TODO: Is this the right way to define the base size? Not sure if px can ever be used properly */
+
+  /* Colors */
+  --colorPeriwinkle: hsl(233, 100%, 88%);
+  --colorPeriwinkleDark: hsl(233, 92%, 81%);
+  --colorGrey: hsl(216, 5%, 63%);
+  --colorChartreuse: hsl(72, 41%, 52%);
+  --colorBlack: hsl(300, 58%, 5%);
+  --colorWhite: #FFFFFF;
+  --colorPeriwinkleLight: hsl(231, 100%, 96%);
+
+  scroll-behavior: smooth;
+}
+
+body {
+  /* -webkit-font-smoothing: none; */
+  font-family: 'Roboto', sans-serif;
+  color: var(--colorBlack);
+}
+
+h1 {
+  font-family: 'Neue Machina';
+  font-weight: 400;
+  font-size: clamp(24px, 3.6vw, 60px);
+  line-height: 1.2;
+  margin: 0;
+}
+
+h1.small {
+  font-family: 'Neue Machina';
+  font-weight: 400;
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: calc(55 / 45);
+  margin: 0;
+}
+
+h2 {
+  font-family: 'Neue Machina';
+  font-weight: 400;
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: calc(55 / 45);
+  margin: 0;
+}
+
+p {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: calc(30 / 21);
+  margin: 0;
+}
+
+@media (max-width: 800px) {
+  p {
+    font-size: 16px;
+  }
+}
+
+.cta,
+.eyebrow {
+  --ctaFontSize: 16px;
+  font-family: 'Neue Machina';
+  font-size: var(--ctaFontSize);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: calc(var(--ctaFontSize) * 0.05);
+  color: var(--colorBlack);
+}
+
+/* Animate underline for CTA <a> */
+a.cta:not(.button) {
+  display: inline-block;
+  margin: 0;
+}
+
+a.cta:not(.button):hover,
+a.cta:not(.button):focus {
+  text-decoration: none;
+  outline: none;
+}
+
+a.cta:not(.button):after {
+  display: block;
+  content: '';
+  border-bottom: solid 1px var(--colorWhite);
+  transform: scaleX(0);
+  transition: 150ms ease-in;
+  transform-origin: 0% 50%;
+}
+
+.theme-light a.cta:not(.button):after {
+  border-bottom-color: var(--colorBlack);
+}
+
+a.cta:not(.button):hover:after,
+a.cta:not(.button):focus:after {
+  transform: scaleX(1);
+}
+
+button.cta,
+.button.cta {
+  display: block;
+
+  /* We need uneven top and bottom padding because our standard line-height for
+   * this font technically leaves a space on the bottom for decenders, but we
+   * don't have any in the styling used here due to the uppercase transform.
+   * Alas, sometimes it be like that. */
+  padding: 1.375em 1.5em 1.18em;
+  background-color: var(--colorPeriwinkle);
+}
+
+@media (max-width: 1200px) {
+
+  button.cta,
+  .button.cta {
+    padding: 0.975em 1.1em 0.78em;
+  }
+}
+
+button.cta:hover,
+button.cta:focus,
+.button.cta:hover,
+.button.cta:focus {
+  color: var(--colorBlack);
+  text-decoration: none;
+  background-color: var(--colorPeriwinkleDark);
+}
+
+a,
+.cta,
+.cta:focus {
+  border: 0;
+  outline: 0;
+}
+
+/* Forms */
+input {
+  -webkit-appearance: none;
+
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1;
+
+  padding: 1em 1.5em;
+
+  color: var(--colorBlack);
+  background-color: var(--colorWhite);
+
+  border: none;
+  border-radius: 0;
+  box-shadow: 0px 0px 0 0 transparent;
+  transition: 250ms ease-in;
+  transition-property: box-shadow, color;
+}
+
+@media (max-width: 1200px) {
+  input {
+    font-size: 16px;
+    padding: 0.75em 1em;
+  }
+}
+
+input:focus {
+  outline: none;
+  box-shadow: 4px 4px 0 0 var(--colorPeriwinkleDark);
+}
+
+input::placeholder {
+  color: var(--colorGrey);
+}

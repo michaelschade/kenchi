@@ -1,0 +1,15 @@
+# Prisma
+failed-inferMigrationSteps*
+
+# Perf
+.clinic
+
+# Backend-specific
+build
+.env
+
+# Dev
+dev/docker/version_running
+dev/docker/ssl
+dev/docker/postgres-data/
+dev/docker/hostess

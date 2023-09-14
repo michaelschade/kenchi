@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": [
+      "dom",
+    ],
+    "module": "commonjs",
+    "strict": true,
+    "rootDir": "./",
+    "outDir": "build",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": [
+      "node",
+      "jest",
+      "express",
+      "nexus-typegen"
+    ]
+  },
+  "files": [
+    "api/app.ts",
+    "api/queue/worker.ts"
+  ],
+  "include": [
+    "api",
+    "tests"
+  ]
+}

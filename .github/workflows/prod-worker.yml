@@ -1,0 +1,26 @@
+name: Prod Worker Sentry Release
+on:
+  push:
+    branches:
+      - prod-worker
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: kenchi
+      SENTRY_PROJECT: worker
+      SENTRY_DEPLOY_ENVIRONMENT: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3.0.2
+      - name: Create new Sentry release
+        run: |
+          pushd packages/backend
+          # Install Sentry CLI
+          curl -sL https://sentry.io/get-cli/ | bash
+          # Create new Sentry release
+          export SENTRY_RELEASE=worker@$(sentry-cli releases propose-version)
+          sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
+          sentry-cli releases set-commits --auto $SENTRY_RELEASE
+          sentry-cli releases finalize $SENTRY_RELEASE

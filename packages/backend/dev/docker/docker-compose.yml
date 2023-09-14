@@ -1,0 +1,23 @@
+version: "3"
+services:
+  db:
+    container_name: "kenchi_postgres"
+    image: "postgres"
+    environment:
+      - POSTGRES_USER=kenchi
+      - POSTGRES_PASSWORD=thisisfine
+      - POSTGRES_DB=kenchi
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+  redis:
+    container_name: "kenchi_redis"
+    image: redis:6-alpine
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    entrypoint:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf
+    ports:
+      - 10000:10000

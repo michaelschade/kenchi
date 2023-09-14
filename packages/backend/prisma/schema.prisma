@@ -1,0 +1,673 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../node_modules/prisma-client"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+generator nexusPrisma {
+  provider = "nexus-prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AuthSession {
+  createdAt DateTime     @default(now()) @map("created_at")
+  data      Json         @default("{}")
+  expiresAt DateTime     @map("expires_at")
+  id        String       @id
+  secret    String       @unique
+  type      AuthTypeEnum
+  updatedAt DateTime     @default(now()) @updatedAt @map("updated_at")
+  userId    Int          @map("user_id")
+  user      User         @relation(fields: [userId], references: [id])
+
+  @@map("auth_sessions")
+}
+
+model Collection {
+  createdAt          DateTime      @default(now()) @map("created_at")
+  id                 Int           @id @default(autoincrement())
+  name               String
+  icon               String?
+  description        String
+  isArchived         Boolean       @default(false) @map("is_deleted")
+  organizationId     Int?          @map("organization_id")
+  organization       Organization? @relation(fields: [organizationId], references: [id])
+  defaultPermissions String[]      @map("default_permissions")
+  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  acl       CollectionAcl[]
+  tools     Tool[]
+  workflows Workflow[]
+
+  @@map("collections")
+}
+
+model CollectionAcl {
+  createdAt    DateTime   @default(now()) @map("created_at")
+  collectionId Int        @map("collection_id")
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  id           Int        @id @default(autoincrement())
+  permissions  String[]
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at")
+  userId       Int?       @map("user_id")
+  user         User?      @relation(fields: [userId], references: [id])
+  userGroupId  Int?       @map("user_group_id")
+  userGroup    UserGroup? @relation(fields: [userGroupId], references: [id])
+
+  @@unique([collectionId, userId, userGroupId])
+  @@map("collection_acl")
+}
+
+model DatabaseMigration {
+  id    Int      @id @default(autoincrement())
+  name  String
+  runOn DateTime @map("run_on")
+
+  @@map("pgmigrations")
+}
+
+model DataImport {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  type        String
+  initialData Json     @map("initial_data")
+
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  state       Json?     @map("state")
+
+  @@map("data_imports")
+}
+
+model DataSource {
+  id              String        @id
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at")
+  organizationId  Int           @map("organization_id")
+  organization    Organization  @relation(fields: [organizationId], references: [id])
+  isArchived      Boolean       @default(false) @map("is_archived")
+  name            String
+  requests        Json
+  outputs         Json          @default("{}")
+
+  @@map("data_sources")
+}
+
+model Domain {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+  name           String?
+  hosts          String[]
+  shadowRecord   Boolean  @default(false) @map("shadow_record")
+  organizationId Int?     @map("organization_id")
+  settings       Json     @default("{}")
+
+  organization Organization?        @relation(fields: [organizationId], references: [id])
+  userSettings UserDomainSettings[]
+
+  @@map("domains")
+}
+
+model ExternalTag {
+  id             String       @id
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+  organizationId Int          @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  label          String
+  intercomId     String?      @map("intercom_id")
+  isArchived     Boolean      @default(false) @map("is_archived")
+
+  @@map("external_tags")
+}
+
+model ExternalDataReference {
+  id              String                    @id
+  createdAt       DateTime                  @default(now()) @map("created_at")
+  updatedAt       DateTime                  @default(now()) @updatedAt @map("updated_at")
+  organizationId  Int?                      @map("organization_id")
+  organization    Organization?             @relation(fields: [organizationId], references: [id])
+  userId          Int?                      @map("user_id")
+  user            User?                     @relation(fields: [userId], references: [id])
+  referenceSource String                    @map("reference_source")
+  referenceType   ExternalReferenceTypeEnum @map("reference_type")
+  label           String
+  referenceId     String                    @map("reference_id")
+  isArchived      Boolean                   @default(false) @map("is_archived")
+
+  @@index([organizationId, isArchived, referenceSource, referenceType])
+  @@map("external_data_references")
+}
+
+model InsightsConversation {
+  createdAt DateTime @default(now()) @map("created_at")
+  syncedAt  DateTime @default(now()) @map("synced_at")
+
+  startedAt      DateTime     @map("started_at")
+  updatedAt      DateTime     @map("updated_at")
+  organizationId Int          @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  id             String
+  data           Json
+  rating         Int?
+  ratedAt        DateTime?    @map("rated_at")
+
+  @@id([organizationId, id])
+  @@map("insights_conversations")
+}
+
+model Feedback {
+  createdAt DateTime @default(now()) @map("created_at")
+  feedback  String
+  id        Int      @id @default(autoincrement())
+  path      String?
+  prompt    String?
+  userId    Int?     @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@map("feedback")
+}
+
+model Log {
+  loggedAt    DateTime  @default(now()) @map("logged_at")
+  createdAt   DateTime  @map("created_at")
+  data        Json
+  id          Int       @id @default(autoincrement())
+  processedAt DateTime? @map("processed_at")
+  userId      Int?      @map("user_id")
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@map("logs")
+}
+
+model Notification {
+  createdAt DateTime @default(now()) @map("created_at")
+  id        String   @id
+  staticId  String?  @map("static_id")
+  type      String
+  data      Json     @default("{}")
+
+  userNotifications UserNotification[]
+
+  @@map("notifications")
+}
+
+model Organization {
+  createdAt               DateTime @default(now()) @map("created_at")
+  googleDomain            String?  @unique @map("google_domain")
+  additionalGoogleDomains String[] @map("additional_google_domains")
+  id                      Int      @id @default(autoincrement())
+  name                    String?
+  settings                Json
+  shadowRecord            Boolean  @map("shadow_record")
+  updatedAt               DateTime @default(now()) @updatedAt @map("updated_at")
+
+  collections           Collection[]
+  domains               Domain[]
+  dataSources           DataSource[]
+  shortcuts             Shortcut[]
+  spaces                Space[]
+  externalTags          ExternalTag[]
+  insightsConversations InsightsConversation[]
+  userGroups            UserGroup[]
+  users                 User[]
+  widgets               Widget[]
+
+  externalDataReference ExternalDataReference[]
+  @@map("organizations")
+}
+
+model PageSnapshot {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  snapshot  Json
+  userId    Int?     @map("user_id")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("page_snapshots")
+}
+
+model ProductChange {
+  createdAt   DateTime @default(now()) @map("created_at")
+  description Json
+  id          Int      @id @default(autoincrement())
+  isMajor     Boolean  @map("is_major")
+  title       String
+
+  @@map("product_changes")
+}
+
+model SessionEntry {
+  id                Int      @id @default(autoincrement())
+  receivedAt        DateTime @default(now()) @map("received_at")
+  userId            Int?     @map("user_id")
+  user              User?    @relation(fields: [userId], references: [id])
+  browserInstanceId String   @map("browser_instance_id")
+  timestamp         DateTime
+  action            String
+  windowId          Int?     @map("window_id")
+  tabId             Int?     @map("tab_id")
+  data              Json     @default("{}")
+
+  @@map("session_entries")
+}
+
+model Shortcut {
+  // We should need ID but have to because Prisma requires a primary key
+  id             Int           @id @default(autoincrement())
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @default(now()) @updatedAt @map("updated_at")
+  organizationId Int?          @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  userId         Int?          @map("user_id")
+  user           User?         @relation(fields: [userId], references: [id])
+  staticId       String        @map("static_id")
+  shortcut       String?
+
+  // Has lots of Partial Unique Indexes and an XOR check constraint
+  @@map("shortcuts")
+}
+
+model Space {
+  // Versioning fields. Must match those for Workflow and in VersionedNodeCreateKeys
+  branchedFromId         Int?           @map("branched_from_id")
+  branchedFrom           Space?         @relation("SpaceToSpace_branchedFromId", fields: [branchedFromId], references: [id])
+  branches               Space[]        @relation("SpaceToSpace_branchedFromId")
+  branchId               String?        @map("branch_id")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  createdByUserId        Int            @map("created_by_user_id")
+  createdByUser          User           @relation("SpaceToUser_createdByUserId", fields: [createdByUserId], references: [id])
+  id                     Int            @id @default(autoincrement())
+  isArchived             Boolean        @default(false) @map("is_deleted")
+  isLatest               Boolean        @map("is_latest")
+  branchType             BranchTypeEnum @map("branch_type")
+  majorChangeDescription Json?          @map("major_change_description")
+  metadata               Json           @default("{}") // Not sure if this is the right default...
+  nextVersions           Space[]        @relation("SpaceToSpace_previousVersionId")
+  previousVersionId      Int?           @map("previous_version_id")
+  previousVersion        Space?         @relation("SpaceToSpace_previousVersionId", fields: [previousVersionId], references: [id])
+  staticId               String         @map("static_id") // @unique https://github.com/prisma/prisma/issues/3076
+  suggestedByUserId      Int?           @map("suggested_by_user_id")
+  suggestedByUser        User?          @relation("SpaceToUser_suggestedByUserId", fields: [suggestedByUserId], references: [id])
+
+  // Space-specific stuff
+  organizationId Int?          @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  visibleToOrg   Boolean       @default(false) @map("visible_to_org")
+  name           String
+  icon           String?
+  widgets        Json
+
+  @@index([staticId, isLatest, branchType])
+  @@map("spaces")
+}
+
+model SpaceAcl {
+  createdAt   DateTime   @default(now()) @map("created_at")
+  staticId    String     @map("static_id")
+  id          Int        @id @default(autoincrement())
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
+  userId      Int?       @map("user_id")
+  user        User?      @relation(fields: [userId], references: [id])
+  userGroupId Int?       @map("user_group_id")
+  userGroup   UserGroup? @relation(fields: [userGroupId], references: [id])
+
+  @@unique([staticId, userId, userGroupId])
+  @@map("space_acl")
+}
+
+model Tool {
+  // Versioning fields. Must match those for Workflow and in VersionedNodeCreateKeys
+  branchedFromId         Int?           @map("branched_from_id")
+  branchedFrom           Tool?          @relation("ToolToTool_branchedFromId", fields: [branchedFromId], references: [id])
+  branches               Tool[]         @relation("ToolToTool_branchedFromId")
+  branchId               String?        @map("branch_id")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  createdByUserId        Int            @map("created_by_user_id")
+  createdByUser          User           @relation("ToolToUser_createdByUserId", fields: [createdByUserId], references: [id])
+  id                     Int            @id @default(autoincrement())
+  isArchived             Boolean        @default(false) @map("is_deleted")
+  isLatest               Boolean        @map("is_latest")
+  branchType             BranchTypeEnum @map("branch_type")
+  majorChangeDescription Json?          @map("major_change_description")
+  metadata               Json           @default("{}") // Not sure if this is the right default...
+  nextVersions           Tool[]         @relation("ToolToTool_previousVersionId")
+  previousVersionId      Int?           @map("previous_version_id")
+  previousVersion        Tool?          @relation("ToolToTool_previousVersionId", fields: [previousVersionId], references: [id])
+  staticId               String         @map("static_id") // @unique https://github.com/prisma/prisma/issues/3076
+  suggestedByUserId      Int?           @map("suggested_by_user_id")
+  suggestedByUser        User?          @relation("ToolToUser_suggestedByUserId", fields: [suggestedByUserId], references: [id])
+
+  // Tool-specific stuff
+  collectionId  Int           @map("collection_id")
+  collection    Collection    @relation(fields: [collectionId], references: [id])
+  component     String
+  configuration Json
+  description   String
+  icon          String?
+  inputs        Json
+  keywords      String[]
+  name          String
+  runLogs       ToolRunLog[]
+  runs          UserToolRun[]
+
+  @@index([staticId, isLatest, branchType])
+  @@map("tools")
+}
+
+model ToolRunLog {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  log       Json
+  toolId    Int?     @map("tool_id")
+  userId    Int?     @map("user_id")
+
+  tool Tool? @relation(fields: [toolId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("tool_run_logs")
+}
+
+model UserChangeView {
+  createdAt  DateTime @default(now()) @map("created_at")
+  id         Int      @id @default(autoincrement())
+  latestView DateTime @map("latest_view")
+  staticId   String?  @map("static_id")
+  userId     Int      @map("user_id") // @unique https://github.com/prisma/prisma/issues/3076
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, staticId], name: "user_change_views_user_id_static_id_key")
+  @@map("user_change_views")
+}
+
+model UserItemSettings {
+  createdAt DateTime @default(now()) @map("created_at")
+  data      Json
+  staticId  String   @map("static_id")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@id([userId, staticId])
+  @@map("user_item_settings")
+}
+
+model UserDomainSettings {
+  createdAt              DateTime @default(now()) @map("created_at")
+  domainId               Int      @map("domain_id")
+  domainInterfaceOptions Json?    @map("domain_interface_options")
+  id                     Int      @id @default(autoincrement())
+  open                   Boolean?
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
+  userId                 Int      @map("user_id")
+  domain                 Domain   @relation(fields: [domainId], references: [id])
+  user                   User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, domainId], name: "user_domain_settings_user_id_domain_id_key")
+  @@map("user_domain_settings")
+}
+
+model UserGroup {
+  createdAt      DateTime @default(now()) @map("created_at")
+  id             Int      @id @default(autoincrement())
+  name           String
+  organizationId Int      @map("organization_id")
+  updatedAt      DateTime @default(now()) @map("updated_at")
+
+  collectionAcls CollectionAcl[]
+  members        UserGroupMember[]
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  spaceAcls      SpaceAcl[]
+
+  @@map("user_groups")
+}
+
+model UserGroupMember {
+  createdAt   DateTime  @default(now()) @map("created_at")
+  manager     Boolean   @default(false)
+  userId      Int       @map("user_id")
+  user        User      @relation(fields: [userId], references: [id])
+  userGroupId Int       @map("user_group_id")
+  userGroup   UserGroup @relation(fields: [userGroupId], references: [id])
+
+  @@id([userId, userGroupId])
+  @@map("user_group_members")
+}
+
+model UserNotification {
+  createdAt      DateTime     @default(now()) @map("created_at")
+  id             String       @id
+  userId         Int          @map("user_id")
+  user           User         @relation(fields: [userId], references: [id])
+  notificationId String       @map("notification_id")
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  dismissedAt    DateTime?    @map("dismissed_at")
+  viewedAt       DateTime?    @map("viewed_at")
+
+  @@map("user_notifications")
+}
+
+model UserSubscription {
+  createdAt  DateTime @default(now()) @map("created_at")
+  staticId   String   @map("static_id")
+  subscribed Boolean
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  userId     Int      @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@id([userId, staticId])
+  @@map("user_subscriptions")
+}
+
+model UserToolRun {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now()) @map("created_at")
+  runAt          DateTime @map("run_at")
+  revisionId     Int?     @map("revision_id")
+  revision       Tool?    @relation(fields: [revisionId], references: [id])
+  staticId       String   @map("static_id")
+  userId         Int      @map("user_id")
+  user           User     @relation(fields: [userId], references: [id])
+  conversationId String?  @map("conversation_id")
+
+  @@map("user_tool_runs")
+}
+
+model UserWorkflowView {
+  id             Int       @id @default(autoincrement())
+  createdAt      DateTime  @default(now()) @map("created_at")
+  viewedAt       DateTime  @map("viewed_at")
+  revisionId     Int?      @map("revision_id")
+  revision       Workflow? @relation(fields: [revisionId], references: [id])
+  staticId       String    @map("static_id")
+  userId         Int       @map("user_id")
+  user           User      @relation(fields: [userId], references: [id])
+  conversationId String?   @map("conversation_id")
+
+  @@map("user_workflow_views")
+}
+
+model User {
+  createdAt                 DateTime      @default(now()) @map("created_at")
+  disabledAt                DateTime?     @map("disabled_at")
+  email                     String?       @unique
+  givenName                 String?       @map("given_name")
+  googleId                  String?       @unique @map("google_id")
+  id                        Int           @id @default(autoincrement())
+  isOrganizationAdmin       Boolean       @default(false) @map("is_organization_admin")
+  name                      String?
+  type                      UserTypeEnum  @default(user)
+  organizationId            Int           @map("organization_id")
+  organization              Organization  @relation(fields: [organizationId], references: [id])
+  updatedAt                 DateTime      @default(now()) @updatedAt @map("updated_at")
+  userinfoFirst             Json?         @map("userinfo_first")
+  userinfoLatest            Json?         @map("userinfo_latest")
+  wantsEditSuggestionEmails Boolean       @default(true) @map("wants_edit_suggestion_emails")
+
+  authSessions       AuthSession[]
+  changeViews        UserChangeView[]
+  collectionAcls     CollectionAcl[]
+  createdSpaces      Space[]              @relation("SpaceToUser_createdByUserId")
+  createdTools       Tool[]               @relation("ToolToUser_createdByUserId")
+  createdWidgets     Widget[]             @relation("WidgetToUser_createdByUserId")
+  createdWorkflows   Workflow[]           @relation("WorkflowToUser_createdByUserId")
+  dataImports        DataImport[]
+  domainSettings     UserDomainSettings[]
+  feedback           Feedback[]
+  itemSettings       UserItemSettings[]
+  logs               Log[]
+  groupMemberships   UserGroupMember[]
+  notifications      UserNotification[]
+  pageSnapshots      PageSnapshot[]
+  sessionEntries     SessionEntry[]
+  shortcuts          Shortcut[]
+  spaceAcls          SpaceAcl[]
+  subscriptions      UserSubscription[]
+  suggestedSpaces    Space[]              @relation("SpaceToUser_suggestedByUserId")
+  suggestedTools     Tool[]               @relation("ToolToUser_suggestedByUserId")
+  suggestedWidgets   Widget[]             @relation("WidgetToUser_suggestedByUserId")
+  suggestedWorkflows Workflow[]           @relation("WorkflowToUser_suggestedByUserId")
+  toolRunLogs        ToolRunLog[]
+  toolRuns           UserToolRun[]
+  workflowViews      UserWorkflowView[]
+
+  externalDataReference ExternalDataReference[]
+  @@map("users")
+}
+
+model Waitlist {
+  createdAt DateTime  @default(now()) @map("created_at")
+  id        Int       @id @default(autoincrement())
+  email     String
+  invitedAt DateTime? @map("invited_at")
+
+  @@map("waitlist")
+}
+
+model Widget {
+  // Versioning fields. Must match those for Workflow and in VersionedNodeCreateKeys
+  branchedFromId         Int?           @map("branched_from_id")
+  branchedFrom           Widget?        @relation("WidgetToWidget_branchedFromId", fields: [branchedFromId], references: [id])
+  branches               Widget[]       @relation("WidgetToWidget_branchedFromId")
+  branchId               String?        @map("branch_id")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  createdByUserId        Int            @map("created_by_user_id")
+  createdByUser          User           @relation("WidgetToUser_createdByUserId", fields: [createdByUserId], references: [id])
+  id                     Int            @id @default(autoincrement())
+  isArchived             Boolean        @default(false) @map("is_archived")
+  isLatest               Boolean        @map("is_latest")
+  branchType             BranchTypeEnum @map("branch_type")
+  majorChangeDescription Json?          @map("major_change_description")
+  metadata               Json           @default("{}") // Not sure if this is the right default...
+  nextVersions           Widget[]       @relation("WidgetToWidget_previousVersionId")
+  previousVersionId      Int?           @map("previous_version_id")
+  previousVersion        Widget?        @relation("WidgetToWidget_previousVersionId", fields: [previousVersionId], references: [id])
+  staticId               String         @map("static_id") // @unique https://github.com/prisma/prisma/issues/3076
+  suggestedByUserId      Int?           @map("suggested_by_user_id")
+  suggestedByUser        User?          @relation("WidgetToUser_suggestedByUserId", fields: [suggestedByUserId], references: [id])
+
+  // Widget-specific stuff
+  organizationId  Int          @map("organization_id")
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  contents        Json
+  inputs          Json
+
+  @@index([staticId, isLatest, branchType])
+  @@map("widgets")
+}
+
+model WorkflowContainsObject {
+  createdAt        DateTime       @default(now()) @map("created_at")
+  id               Int            @id @default(autoincrement())
+  objectType       ObjectTypeEnum @map("object_type")
+  objectStaticId   String         @map("object_static_id")
+  workflowStaticId String         @map("workflow_static_id")
+
+
+  @@unique([workflowStaticId, objectStaticId], name: "workflow_contains_object_uniq_workflow_static_id_object_static_id")
+  @@index([objectStaticId], name: "workflow_contains_object_object_static_id_index")
+  @@index([workflowStaticId], name: "workflow_contains_object_workflow_static_id_index")
+  @@map("workflow_contains_object")
+}
+
+model Workflow {
+  // Versioning fields. Must match those for Tool and in VersionedNodeCreateKeys
+  branchedFromId         Int?           @map("branched_from_id")
+  branchedFrom           Workflow?      @relation("WorkflowToWorkflow_branchedFromId", fields: [branchedFromId], references: [id])
+  branches               Workflow[]     @relation("WorkflowToWorkflow_branchedFromId")
+  branchId               String?        @map("branch_id")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  createdByUserId        Int            @map("created_by_user_id")
+  createdByUser          User           @relation("WorkflowToUser_createdByUserId", fields: [createdByUserId], references: [id])
+  id                     Int            @id @default(autoincrement())
+  isArchived             Boolean        @default(false) @map("is_deleted")
+  isLatest               Boolean        @map("is_latest")
+  branchType             BranchTypeEnum @map("branch_type")
+  majorChangeDescription Json?          @map("major_change_description")
+  metadata               Json           @default("{}") // Not sure if this is the right default...
+  nextVersions           Workflow[]     @relation("WorkflowToWorkflow_previousVersionId")
+  previousVersionId      Int?           @map("previous_version_id")
+  previousVersion        Workflow?      @relation("WorkflowToWorkflow_previousVersionId", fields: [previousVersionId], references: [id])
+  staticId               String         @map("static_id") // @unique https://github.com/prisma/prisma/issues/3076
+  suggestedByUserId      Int?           @map("suggested_by_user_id")
+  suggestedByUser        User?          @relation("WorkflowToUser_suggestedByUserId", fields: [suggestedByUserId], references: [id])
+
+  // Workflow-specific stuff
+  collectionId Int                @map("collection_id")
+  collection   Collection         @relation(fields: [collectionId], references: [id])
+  contents     Json
+  description  String
+  icon         String?
+  keywords     String[]
+  name         String
+  views        UserWorkflowView[]
+
+  @@index([staticId, isLatest, branchType])
+  @@map("workflows")
+}
+
+enum AuthTypeEnum {
+  user
+  loginAs  @map("login_as")
+
+  @@map("auth_type_enum")
+}
+
+enum BranchTypeEnum {
+  published
+  draft
+  remix
+  suggestion
+
+  @@map("branch_type_enum")
+}
+
+enum ExternalReferenceTypeEnum {
+  tag
+
+  @@map("external_reference_type_enum")
+}
+
+enum ObjectTypeEnum {
+  tool
+  workflowEmbed  @map("workflow-embed")
+  workflowLink   @map("workflow-link")
+
+  @@map("object_type_enum")
+}
+
+enum UserTypeEnum {
+  user
+  kenchi
+
+  @@map("user_type_enum")
+}

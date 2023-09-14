@@ -1,0 +1,10 @@
+{
+  "directoryListing": false,
+  "public": "build",
+  "rewrites": [
+    {
+      "source": "!queues",
+      "destination": "/index.html"
+    }
+  ]
+}

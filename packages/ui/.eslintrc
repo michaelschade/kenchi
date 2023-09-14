@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@kenchi/ui/*"],
+            "message": "Please use relative imports instead."
+          }
+        ]
+      }
+    ]
+  }
+}

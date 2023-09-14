@@ -1,0 +1,113 @@
+name: Frontend Testing
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - packages/frontend/**
+      - packages/commands/**
+      - packages/slate-tools/**
+      - packages/ui/**
+      - .github/workflows/test-frontend.yml
+      - pnpm-lock.yaml
+defaults:
+  run:
+    working-directory: packages/frontend
+env:
+  CI: true
+jobs:
+  jest:
+    name: jest tests
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-frontend-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-frontend-
+
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: '7'
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile --filter @kenchi/frontend...
+        env:
+          NPM_AUTH_TOKEN_GITHUB: ${{ secrets.GHP_PRIVATE_TOKEN }}
+          NPM_AUTH_TOKEN_FONTAWESOME: ${{ secrets.FONTAWESOME_PRIVATE_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ../../.github/ci.npmrc
+
+      - run: pnpm lint
+      - run: pnpm tsc
+      - run: pnpm test
+
+  playwright:
+    name: playwright tests
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-playwright-
+
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: '7'
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+
+      - name: Get current playwright version
+        id: playwright-version
+        run: echo "::set-output name=version::$(pnpm list --json --non-interactive --no-progress --pattern '@playwright/test' | jq -r '.data.trees[].name')"
+
+      - name: Cache playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-v2
+
+      - run: pnpm install --frozen-lockfile --filter @kenchi/frontend... --filter @kenchi/extension...
+        env:
+          NPM_AUTH_TOKEN_GITHUB: ${{ secrets.GHP_PRIVATE_TOKEN }}
+          NPM_AUTH_TOKEN_FONTAWESOME: ${{ secrets.FONTAWESOME_PRIVATE_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ../../.github/ci.npmrc
+          DEBUG: pw:install
+
+      - run: pnpm playwright:install:default-browsers
+        env:
+          DEBUG: pw:install
+
+      - run: pnpm build:playwright
+
+      - name: Build extension
+        run: pnpm build:playwright
+        working-directory: packages/extension
+
+      - run: xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" -- pnpm playwright test
+        # env:
+          # Playwright has a number of different log names:
+          # https://github.com/microsoft/playwright/blob/5ba7903ba098586a13745e0d7ac894f1d55d47aa/packages/playwright-core/src/utils/debugLogger.ts#L20
+          # This log name will report any problems launching the browser.
+          # DEBUG: pw:api,pw:browser*

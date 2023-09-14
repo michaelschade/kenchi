@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true
+  },
+  "extends": "./tsconfig.json",
+  "include": [
+    "migrations"
+  ]
+}

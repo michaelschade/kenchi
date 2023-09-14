@@ -1,0 +1,74 @@
+#!/bin/bash
+set -e
+
+pushd "$(dirname "$0")/../"
+
+if [ ! -x "$(command -v mkcert)" ]; then
+    echo "mkcert is not installed. Please run:"
+    echo "  brew install mkcert"
+    echo "  mkcert --install"
+    echo "if you want Firefox support also run:"
+    echo "  brew install nss"
+    echo
+    echo "then rerun this script"
+    exit 1
+fi
+
+if [ ! -f "/opt/homebrew/opt/nginx/bin/nginx" ]; then
+    echo "nginx is not installed. Please run:"
+    echo "  brew install nginx"
+    echo
+    echo "then rerun this script"
+    exit 1
+fi
+
+pushd dev/docker
+
+if [ ! -d "ssl" ]; then
+    mkdir ssl
+fi
+
+if [ ! -f "ssl/_wildcard.kenchi.dev.pem" ]; then
+    echo "Running mkcert"
+    pushd ssl
+    mkcert "*.kenchi.dev"
+    popd
+fi
+
+if [ ! -f "hostess" ]; then
+    echo "Downloading hostess to make /etc/hosts management easier"
+    # This does some munging of /etc/hosts on write that I don't like. Only use it for reading.
+    curl -L https://github.com/cbednarski/hostess/releases/download/v0.5.2/hostess_macos_amd64 -o hostess
+    chmod +x hostess
+fi
+
+if [ $(./hostess ls | egrep '^(www|api|app|scripts|admin|admin-api|ui).kenchi.dev\s*-> 127.0.0.1\s*\(On\)' | wc -l) -ne 7 ]; then
+    echo "Missing (www|api|app|scripts|admin|admin-api|ui).kenchi.dev from /etc/hosts"
+    echo "Adding it for you if you give me your password (omnomnom)"
+    echo "If you'd prefer to do it manually here's what I'm adding:"
+    echo "  127.0.0.1 www.kenchi.dev api.kenchi.dev app.kenchi.dev scripts.kenchi.dev admin.kenchi.dev admin-api.kenchi.dev ui.kenchi.dev"
+
+    echo "
+
+127.0.0.1 www.kenchi.dev api.kenchi.dev app.kenchi.dev scripts.kenchi.dev admin.kenchi.dev admin-api.kenchi.dev ui.kenchi.dev
+" | sudo tee -a /etc/hosts > /dev/null
+fi
+
+if [ ! -f "version_running" ] || [ $(<version_latest) -ne $(<version_running) ]; then
+    echo "restarting docker compose and nginx due to changes (you'll need your password for nginx)"
+    docker compose down
+
+    mkdir -p /opt/homebrew/etc/nginx/servers/
+    cp proxy.conf /opt/homebrew/etc/nginx/servers/
+    cp 502.json /opt/homebrew/var/www/
+    if [ ! -d "/opt/homebrew/etc/nginx/ssl" ]; then
+        cp -r ssl /opt/homebrew/etc/nginx/
+    fi
+    sudo brew services restart nginx
+
+    cp version_latest version_running
+fi
+
+docker compose up -d
+
+popd

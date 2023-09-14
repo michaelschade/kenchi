@@ -1,0 +1,50 @@
+name: Admin Testing
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - packages/admin/**
+      - packages/slate-tools/**
+      - packages/ui/**
+      - .github/workflows/test-admin.yml
+      - pnpm-lock.yaml
+jobs:
+  build:
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/admin
+    env:
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-admin-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-admin-
+
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: '7'
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile --filter @kenchi/admin...
+        env:
+          NPM_AUTH_TOKEN_GITHUB: ${{ secrets.GHP_PRIVATE_TOKEN }}
+          NPM_AUTH_TOKEN_FONTAWESOME: ${{ secrets.FONTAWESOME_PRIVATE_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ../../.github/ci.npmrc
+
+      - run: pnpm lint

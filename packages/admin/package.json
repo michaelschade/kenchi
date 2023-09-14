@@ -1,0 +1,72 @@
+{
+  "name": "@kenchi/admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "PORT=3001 BROWSER=none craco start",
+    "build": "craco build",
+    "build:staging": "env-cmd -f .env.staging $npm_execpath build",
+    "serve": "serve",
+    "test": "craco test",
+    "generate": "$npm_execpath generate:graphql",
+    "generate:graphql": "graphql-codegen",
+    "lint": "eslint 'src/**/*.{js,ts,tsx}'",
+    "eject": "craco eject"
+  },
+  "browserslist": {
+    "production": [
+      "last 5 chrome versions"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
+  },
+  "babelMacros": {
+    "twin": {
+      "config": "../tailwind.config.js"
+    }
+  },
+  "dependencies": {
+    "@apollo/client": "3.6.7",
+    "@babel/core": "7.18.2",
+    "@emotion/react": "11.9.0",
+    "@emotion/styled": "11.8.1",
+    "@fortawesome/fontawesome-svg-core": "1.2.36",
+    "@fortawesome/pro-solid-svg-icons": "5.15.4",
+    "@fortawesome/react-fontawesome": "0.1.18",
+    "@kenchi/root": "workspace:*",
+    "@kenchi/ui": "workspace:*",
+    "@types/jest": "27.5.2",
+    "@types/lodash": "4.14.182",
+    "@types/luxon": "2.3.2",
+    "@types/react": "17.0.45",
+    "@types/react-dom": "17.0.17",
+    "@types/react-router-dom": "5.3.3",
+    "bootstrap": "4.6.1",
+    "graphql": "15.8.0",
+    "lodash": "4.17.21",
+    "luxon": "2.4.0",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "react-router-dom": "5.3.3",
+    "react-scripts": "5.0.1",
+    "serve": "13.0.2",
+    "twin.macro": "2.8.2",
+    "typescript": "4.7.3"
+  },
+  "devDependencies": {
+    "@craco/craco": "7.0.0-alpha.3",
+    "@emotion/babel-plugin": "11.9.2",
+    "@graphql-codegen/add": "3.1.1",
+    "@graphql-codegen/cli": "2.6.2",
+    "@graphql-codegen/typescript": "2.4.11",
+    "@graphql-codegen/typescript-operations": "2.4.0",
+    "@testing-library/jest-dom": "5.16.4",
+    "@testing-library/react": "12.1.5",
+    "@testing-library/user-event": "13.5.0",
+    "babel-plugin-graphql-tag": "3.3.0",
+    "env-cmd": "10.1.0",
+    "graphql-tag": "2.12.6",
+    "webpack": "5.73.0"
+  }
+}

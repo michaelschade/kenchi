@@ -1,0 +1,100 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  color: #31363c;
+  margin: 0;
+  font-size: 1em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+p {
+  font-size: 0.95em;
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0 !important; /* bootstrap reset */
+}
+
+h1 {
+  font-size: 1.1em;
+}
+
+h2 {
+  font-size: 1em;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1em;
+  margin-bottom: 0.25rem;
+}
+
+ul, ol {
+  padding-left: 17px;
+}
+
+ul li, ol li {
+  margin-bottom: 10px;
+}
+
+li > ul, li > ol {
+  margin-top: 10px;
+}
+
+ul p, ol p {
+  margin-bottom: 5px;
+}
+
+div > p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  transition: color 0.1s ease-in-out;
+}
+
+/* Bootstrap migration */
+
+.w-100 {
+  width: 100% !important;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.text-muted {
+  color: #6c757d !important
+}
+
+.text-dark {
+  color: #343a40 !important;
+}
+
+.text-success {
+  color: #28a745 !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+small, .small {
+  font-size: 80%;
+  font-weight: 400;
+}

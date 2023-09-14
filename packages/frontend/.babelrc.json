@@ -1,0 +1,13 @@
+{
+  "env": {
+    "test": {
+      "presets": [
+        ["@babel/preset-react", { "runtime": "automatic", "importSource": "@emotion/react" }]
+      ],
+      "plugins": [
+        "graphql-tag",
+        "@emotion"
+      ]
+    }
+  }
+}

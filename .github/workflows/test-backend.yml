@@ -1,0 +1,104 @@
+name: Backend Testing
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - packages/backend/**
+      - packages/slate-tools/**
+      - .github/workflows/test-backend.yml
+      - pnpm-lock.yaml
+defaults:
+  run:
+    working-directory: packages/backend
+env:
+  CI: true
+jobs:
+  jest:
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_USER: kenchi
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kenchi
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-backend-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-backend-
+
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: '7'
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile --filter @kenchi/backend...
+        env:
+          NPM_AUTH_TOKEN_GITHUB: ${{ secrets.GHP_PRIVATE_TOKEN }}
+          NPM_AUTH_TOKEN_FONTAWESOME: ${{ secrets.FONTAWESOME_PRIVATE_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ../../.github/ci.npmrc
+
+      - run: pnpm test
+        env:
+          DATABASE_URL: "postgresql://kenchi:postgres@localhost:${{ job.services.postgres.ports[5432] }}/kenchi"
+          # Fix for JS running out of heap memory: https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory/66914674#66914674
+          NODE_OPTIONS: "--max_old_space_size=4096"
+  build:
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-backend-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-backend-
+
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: '7'
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile --filter @kenchi/backend...
+        env:
+          NPM_AUTH_TOKEN_GITHUB: ${{ secrets.GHP_PRIVATE_TOKEN }}
+          NPM_AUTH_TOKEN_FONTAWESOME: ${{ secrets.FONTAWESOME_PRIVATE_TOKEN }}
+          NPM_CONFIG_USERCONFIG: ../../.github/ci.npmrc
+
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm tsc

@@ -1,0 +1,105 @@
+#!/usr/bin/env node
+
+/*
+ * Formats plaintext to HTML, optimized for output similar to OpenAI GPT-3
+ * plaintext (e.g. simple list formatting with dashes or numbers, basic English
+ * greetings) -> Kenchi-compatible HTML to quickly create demo playbooks and
+ * snippets. The resulting HTML will include Kenchi variables for greetings and
+ * sign-offs.
+ *
+ * For **snippets**, copy the output text from OpenAI and run this command:
+ *
+ *    pbpaste | ./plaintext2html | pbcopy
+ *
+ * For **playbooks**, copy the output text from OpenAI and run this command:
+ *
+ *    pbpaste | ./plaintext2html --playbook | pbcopy
+ *
+ * The resulting content is mostly intended for
+ * `packages/backend/api/graphql/admin/demoContent.ts`, which uses the Kenchi
+ * HTML parser to generate demo content, but could conceivably be used for
+ * other import use-cases (like helping import content for new accounts from
+ * arbitrary systems) down the line.
+ *
+ */
+
+var readline = require('readline');
+
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false,
+});
+
+// Fragile but works ¯\_(ツ)_/¯
+const playbookRules = process.argv[2] === '--playbook';
+const snippetRules = !playbookRules;
+
+let insideUL = false;
+let insideOL = false;
+let justEncounteredBlank = false;
+
+rl.on('line', function (line) {
+  let ln = line.replace(/^\s*/, '').replace(/\s*$/, '');
+  if (!ln.trim().length) {
+    // No blank lines
+    if (snippetRules && !insideUL && !insideOL && !justEncounteredBlank) {
+      console.log('<p></p>');
+      justEncounteredBlank = true;
+    }
+    return;
+  }
+  justEncounteredBlank = false;
+
+  // Convert basic greetings to include Kenchi recipient name variable
+  const nameRegex = /^(Hello|Hey|Hi)( there)?/;
+  const nameMatch = ln.match(nameRegex);
+  if (nameMatch) {
+    const nameVar = `<variable id="recipientFirstName" source="page" placeholder="Recipient first name"></variable>`;
+    ln = ln.replace(nameRegex, `${nameMatch[1]} ${nameVar}`);
+  }
+
+  if (/^-\s*/.test(ln)) {
+    // unordered lists
+    if (!insideUL) {
+      insideUL = true;
+      console.log('<ul>');
+    }
+    console.log('<li><p>' + ln.replace(/^-\s*/, '') + '</p></li>');
+  } else if (/^\d/.test(ln)) {
+    // ordered lists
+    if (!insideOL) {
+      insideOL = true;
+      console.log('<ol>');
+    }
+    console.log(ln.replace(/^\d*(\.|\))?\s*/, '<li><p>') + '</p></li>');
+  } else {
+    // normal paragraph
+    if (insideUL) {
+      insideUL = false;
+      console.log('</ul>');
+    }
+    if (insideOL) {
+      insideOL = false;
+      console.log('</ol>');
+    }
+    console.log('<p>' + ln + '</p>');
+  }
+});
+
+process.on('exit', () => {
+  if (insideUL) {
+    console.log('</ul>');
+  }
+  if (insideOL) {
+    console.log('</ol>');
+  }
+  // Include Kenchi author name variable in sign off. The space at the end of
+  // the author name is intentional as our editor doesn't seem to like
+  // <p><variable /></p> on its own.
+  if (snippetRules) {
+    console.log(
+      `<p></p><p><variable id="authorFirstName" source="page" placeholder="Author first name"></variable> </p>`
+    );
+  }
+});

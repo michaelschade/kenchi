@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "types": [
+      "node",
+      "express",
+      "nexus-typegen"
+    ]
+  },
+  "extends": "./tsconfig.json",
+  "include": [
+    "api"
+  ]
+}

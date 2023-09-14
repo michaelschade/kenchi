@@ -1,0 +1,37 @@
+{
+  "name": "@kenchi/root",
+  "private": true,
+  "version": "0.1.0",
+  "license": "PRIVATE",
+  "scripts": {
+    "preinstall": "./scripts/use_pnpm",
+    "clean": "$npm_execpath -r --if-present clean",
+    "start": "pushd packages/backend && ./dev/init_env && popd && OVERMIND_NO_PORT=1 overmind start -r site",
+    "start:app": "$npm_execpath start -x admin_backend,admin_frontend,site"
+  },
+  "engines": {
+    "pnpm": "8"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "dependencies": {
+    "@babel/core": "7.18.2",
+    "typescript": "4.7.3"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "5.27.1",
+    "@typescript-eslint/parser": "5.27.1",
+    "eslint": "8.14.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-config-react-app": "7.0.1",
+    "eslint-plugin-jsx-a11y": "6.5.1",
+    "eslint-plugin-prettier": "4.0.0",
+    "eslint-plugin-react": "7.30.0",
+    "eslint-plugin-react-hooks": "4.5.0",
+    "eslint-plugin-simple-import-sort": "7.0.0",
+    "prettier": "2.6.2"
+  }
+}
